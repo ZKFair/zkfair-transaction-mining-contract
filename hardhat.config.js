@@ -1,3 +1,4 @@
+require('dotenv').config();
 require("@nomicfoundation/hardhat-toolbox");
 require('@openzeppelin/hardhat-upgrades');
 require('hardhat-dependency-compiler');
@@ -19,10 +20,8 @@ module.exports = {
     ]
   },
   networks: {
-    lumozL1Devnet: {
-      url: 'https://rpc.ankr.com/eth_sepolia',
-      chainId: 11155111,
-      accounts: ["0x"],
+    zkfair: {
+      url: `${process.env.NETWORK_URL}`,
       timeout: 2000000,
     },
   }

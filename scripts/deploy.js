@@ -1,32 +1,46 @@
-// We require the Hardhat Runtime Environment explicitly here. This is optional
-// but useful for running the script in a standalone fashion through `node <script>`.
-//
-// You can also run a script with `npx hardhat run <script>`. If you do that, Hardhat
-// will compile your contracts, add the Hardhat Runtime Environment's members to the
-// global scope, and execute the script.
-const hre = require("hardhat");
+const { ethers, upgrades} = require('hardhat');
 
+const path = require('path');
+const fs = require('fs');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+
+const pathOutputJson = path.join(__dirname, '../deploy_output.json');
+let deployOutput = {};
+if (fs.existsSync(pathOutputJson)) {
+  deployOutput = require(pathOutputJson);
+}
 async function main() {
-  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  const unlockTime = currentTimestampInSeconds + 60;
+  let deployer = new ethers.Wallet(process.env.PRIVATE_KEY, ethers.provider);
+  console.log(await deployer.getAddress())
+  const rewardDistributionFactory = await ethers.getContractFactory("RewardDistribution", deployer);
 
-  const lockedAmount = hre.ethers.parseEther("0.001");
+  let rewardDistributionContract;
+  if (deployOutput.rewardDistributionContract === undefined || deployOutput.rewardDistributionContract === '') {
+    rewardDistributionContract = await upgrades.deployProxy(
+        rewardDistributionFactory,
+        [
+          process.env.INITIAL_OWNER,
+          process.env.ZKF_TOKEN_ADDRESS,
+          process.env.PROPOSAL_AUTHORITY,
+          process.env.REVIEW_AUTHORITY,
+          process.env.TOTAL_OUTPUT,
+        ],
+        {
+          constructorArgs: [
+          ],
+          unsafeAllow: ['constructor', 'state-variable-immutable'],
+        });
+    console.log('tx hash:', rewardDistributionContract.deploymentTransaction().hash);
+  } else {
+    rewardDistributionContract = rewardDistributionFactory.attach(deployOutput.rewardDistributionContract);
+  }
 
-  const lock = await hre.ethers.deployContract("Lock", [unlockTime], {
-    value: lockedAmount,
-  });
-
-  await lock.waitForDeployment();
-
-  console.log(
-    `Lock with ${ethers.formatEther(
-      lockedAmount
-    )}ETH and unlock timestamp ${unlockTime} deployed to ${lock.target}`
-  );
+  deployOutput.rewardDistributionContract = rewardDistributionContract.target;
+  fs.writeFileSync(pathOutputJson, JSON.stringify(deployOutput, null, 1));
+  console.log('#######################\n');
+  console.log('RewardDistributionContract deployed to:', rewardDistributionContract.target);
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
 main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
