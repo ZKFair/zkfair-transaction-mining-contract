@@ -6,7 +6,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {IERC20} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
 contract RewardDistribution is OwnableUpgradeable {
-    uint public totalMonthOutput; //Total Mining.
+    uint public totalOutput; //Total Mining.
     uint public firstStartTime; // first start time
 
     address public zkfTokenAddress;
@@ -43,13 +43,13 @@ contract RewardDistribution is OwnableUpgradeable {
         address _zkfTokenAddress,
         address _proposalAuthority,
         address _reviewAuthority,
-        uint256 _totalMonthOutput
+        uint256 _totalOutput
     ) external virtual initializer {
         firstStartTime = block.timestamp;
         zkfTokenAddress = _zkfTokenAddress;
         proposalAuthority = _proposalAuthority;
         reviewAuthority = _reviewAuthority;
-        totalMonthOutput = _totalMonthOutput;
+        totalOutput = _totalOutput;
         // Initialize OZ contracts
         __Ownable_init_unchained(_initialOwner);
     }
@@ -99,7 +99,7 @@ contract RewardDistribution is OwnableUpgradeable {
 
     function claim(uint256 index, uint256 amount, bytes32[] calldata merkleProof) public {
         require(!isClaimed(index), 'MerkleDistributor: Drop already claimed.');
-        require(amount > 0 && amount <= totalMonthOutput, 'Invalid parameter');
+        require(amount > 0 && amount <= totalOutput, 'Invalid parameter');
 
         // Verify the merkle proof.
         bytes32 node = keccak256(abi.encodePacked(index, msg.sender, amount));
@@ -107,7 +107,7 @@ contract RewardDistribution is OwnableUpgradeable {
         // Mark it claimed and send the token.
         _setClaimed(index);
 
-        require(totalDistributedReward + amount <= totalMonthOutput, 'Distribution has ended.');
+        require(totalDistributedReward + amount <= totalOutput, 'Distribution has ended.');
 
         bool bResult = IERC20(zkfTokenAddress).transfer(msg.sender, amount);
         require(bResult, 'ZKF erc20 transfer failed.');
