@@ -8,6 +8,8 @@ import {IERC20} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgra
 contract RewardDistribution is OwnableUpgradeable {
     uint public totalOutput; //Total Mining.
     uint public firstStartTime; // first start time
+    uint public claimStartTime; // claim start time
+    uint public claimEndInterval; // claim end interval
 
     address public zkfTokenAddress;
     uint public totalDistributedReward; // total Distributed Reward
@@ -48,16 +50,18 @@ contract RewardDistribution is OwnableUpgradeable {
         address _zkfTokenAddress,
         address _proposalAuthority,
         address _reviewAuthority,
-        uint256 _totalOutput
+        uint256 _totalOutput,
+        uint256 _claimEndInterval
     ) external onlyValidAddress(_initialOwner)
-        onlyValidAddress(_zkfTokenAddress)
-        onlyValidAddress(_proposalAuthority)
-        onlyValidAddress(_reviewAuthority) virtual initializer {
+    onlyValidAddress(_zkfTokenAddress)
+    onlyValidAddress(_proposalAuthority)
+    onlyValidAddress(_reviewAuthority) virtual initializer {
         firstStartTime = block.timestamp;
         zkfTokenAddress = _zkfTokenAddress;
         proposalAuthority = _proposalAuthority;
         reviewAuthority = _reviewAuthority;
         totalOutput = _totalOutput;
+        claimEndInterval = _claimEndInterval;
         // Initialize OZ contracts
         __Ownable_init_unchained(_initialOwner);
     }
@@ -87,6 +91,7 @@ contract RewardDistribution is OwnableUpgradeable {
         require(pendingMerkleRoot != 0x00);
         if (_approved) {
             merkleRoot = pendingMerkleRoot;
+            claimStartTime = block.timestamp;
         }
         delete pendingMerkleRoot;
     }
@@ -112,6 +117,8 @@ contract RewardDistribution is OwnableUpgradeable {
         // Verify the merkle proof.
         bytes32 node = keccak256(abi.encodePacked(index, msg.sender, amount));
         require(verify(merkleProof, merkleRoot, node), 'MerkleDistributor: Invalid proof.');
+
+        require(claimStartTime + claimEndInterval >= block.timestamp, 'claim end');
         // Mark it claimed and send the token.
         _setClaimed(index);
 
@@ -127,6 +134,14 @@ contract RewardDistribution is OwnableUpgradeable {
         rewardHistory[msg.sender] += amount;
         totalDistributedReward += amount;
         emit Claimed(index, msg.sender, amount);
+    }
+
+    function burnBalance() public {
+        require(msg.sender == reviewAuthority);
+        require(claimStartTime + claimEndInterval < block.timestamp, 'claim not end');
+        uint balance = IERC20(zkfTokenAddress).balanceOf(address(this));
+        bool bResult = IERC20(zkfTokenAddress).transfer(address(0), balance);
+        require(bResult, 'ZKF erc20 transfer failed.');
     }
 
     function allRewardsAddressLength() public view returns(uint) {

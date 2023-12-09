@@ -24,6 +24,7 @@ async function main() {
           process.env.PROPOSAL_AUTHORITY,
           process.env.REVIEW_AUTHORITY,
           process.env.TOTAL_OUTPUT,
+          process.env.CLAIM_END_INTERVAL,
         ],
         {
           constructorArgs: [
