@@ -38,13 +38,21 @@ contract RewardDistribution is OwnableUpgradeable {
     // This is a packed array of booleans.
     mapping(uint256 => uint256) private claimedBitMap;
 
+    modifier onlyValidAddress(address addr) {
+        require(addr != address(0), "Illegal address");
+        _;
+    }
+
     function initialize(
         address _initialOwner,
         address _zkfTokenAddress,
         address _proposalAuthority,
         address _reviewAuthority,
         uint256 _totalOutput
-    ) external virtual initializer {
+    ) external onlyValidAddress(_initialOwner)
+        onlyValidAddress(_zkfTokenAddress)
+        onlyValidAddress(_proposalAuthority)
+        onlyValidAddress(_reviewAuthority) virtual initializer {
         firstStartTime = block.timestamp;
         zkfTokenAddress = _zkfTokenAddress;
         proposalAuthority = _proposalAuthority;
@@ -54,12 +62,12 @@ contract RewardDistribution is OwnableUpgradeable {
         __Ownable_init_unchained(_initialOwner);
     }
 
-    function setProposalAuthority(address _account) public {
+    function setProposalAuthority(address _account) public onlyValidAddress(_account) {
         require(msg.sender == proposalAuthority);
         proposalAuthority = _account;
     }
 
-    function setReviewAuthority(address _account) public {
+    function setReviewAuthority(address _account) public onlyValidAddress(_account) {
         require(msg.sender == reviewAuthority);
         reviewAuthority = _account;
     }
