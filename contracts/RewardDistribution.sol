@@ -4,6 +4,7 @@ pragma solidity 0.8.20;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {IERC20} from "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
+import "../interfaces/IERC20Burnable.sol";
 
 contract RewardDistribution is OwnableUpgradeable {
     uint public totalOutput; //Total Mining.
@@ -140,8 +141,7 @@ contract RewardDistribution is OwnableUpgradeable {
         require(msg.sender == reviewAuthority);
         require(claimStartTime + claimEndInterval < block.timestamp, 'claim not end');
         uint balance = IERC20(zkfTokenAddress).balanceOf(address(this));
-        bool bResult = IERC20(zkfTokenAddress).transfer(address(0), balance);
-        require(bResult, 'ZKF erc20 transfer failed.');
+        IERC20Burnable(zkfTokenAddress).burn(balance);
     }
 
     function allRewardsAddressLength() public view returns(uint) {
