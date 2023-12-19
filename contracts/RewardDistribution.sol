@@ -112,6 +112,7 @@ contract RewardDistribution is OwnableUpgradeable {
     }
 
     function claim(uint256 index, uint256 amount, bytes32[] calldata merkleProof) public {
+        require(merkleRoot != 0x00, "merkleRoot has not been submitted yet");
         require(!isClaimed(index), 'MerkleDistributor: Drop already claimed.');
         require(amount > 0 && amount <= totalOutput, 'Invalid parameter');
 
