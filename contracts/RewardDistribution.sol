@@ -117,7 +117,7 @@ contract RewardDistribution is OwnableUpgradeable {
         require(amount > 0 && amount <= totalOutput, 'Invalid parameter');
 
         // Verify the merkle proof.
-        bytes32 node = keccak256(abi.encodePacked(index, msg.sender, amount));
+        bytes32 node = keccak256(bytes.concat(keccak256(abi.encode(index, msg.sender, amount)));
         require(verify(merkleProof, merkleRoot, node), 'MerkleDistributor: Invalid proof.');
 
         require(claimStartTime + claimEndInterval >= block.timestamp, 'claim end');
