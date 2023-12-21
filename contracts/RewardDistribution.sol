@@ -46,6 +46,10 @@ contract RewardDistribution is OwnableUpgradeable {
         _;
     }
 
+    constructor() {
+        _disableInitializers();
+    }
+    
     function initialize(
         address _initialOwner,
         address _zkfTokenAddress,
